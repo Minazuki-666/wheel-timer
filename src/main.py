@@ -396,7 +396,7 @@ class TimerApp:
         self.start_button.config(state=tk.NORMAL)
         self.pause_button.config(state=tk.DISABLED, text="一時停止")
     
-    def run_timer(self):
+    def run_timer(self): 
         print("タイマースレッド開始")
         while self.timer_running and self.seconds_left > 0:
             if not self.timer_paused:
