@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wheel Timer</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
-<body>
+
+    <body>
     <div class="container">
         <header>
             <h1>🕒 Wheel Timer</h1>
@@ -17,12 +21,10 @@
             <!-- タイマー表示部分 -->
             <section class="timer-display">
                 <div class="time-display" id="timeDisplay">00:00:00</div>
-                <div class="status-display" id="statusDisplay">マウスホイールで時間を調整してください</div>
             </section>
-
             <!-- 時間設定部分 -->
             <section class="time-input">
-                <!-- <h2>時間設定（マウスホイールで調整）</h2> -->
+                <h2 id="statusDisplay">時間設定（マウスホイールで調整）</h2>
                 <div class="time-input-container">
                     <!-- 時間 -->
                     <div class="time-unit">
