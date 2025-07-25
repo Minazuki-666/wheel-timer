@@ -3,6 +3,8 @@ from tkinter import font, ttk
 import time
 import threading
 import winsound  # Windowsでの音声通知用
+import os
+import sys
 # from win10toast import ToastNotifier  # Windows通知用
 
 class TimerApp:
@@ -76,39 +78,150 @@ class TimerApp:
         self.minutes.trace('w', self.on_time_change)
         self.seconds.trace('w', self.on_time_change)
         
-    def create_keypad(self):
-        keypad_frame = tk.Frame(self.main_frame, bg="#f0f0f0")
-        keypad_frame.pack(fill=tk.BOTH, expand=True)
+    def create_time_input(self):
+        """マウスホイールで調整可能な時間入力エリアを作成"""
+        input_frame = tk.Frame(self.main_frame, bg="#f0f0f0")
+        input_frame.pack(fill=tk.X, pady=20)
         
-        # フレーム内でキーパッドを中央に配置
-        keypad_inner_frame = tk.Frame(keypad_frame, bg="#f0f0f0")
-        keypad_inner_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        # タイトル
+        title_label = tk.Label(
+            input_frame,
+            text="時間設定（マウスホイールで調整）",
+            font=self.label_font,
+            bg="#f0f0f0",
+            fg="#333333"
+        )
+        title_label.pack(pady=(0, 10))
         
-        # キーパッド配置（電卓風の配置）- 00ボタン追加
-        keypad_buttons = [
-            ('7', 0, 0), ('8', 0, 1), ('9', 0, 2),
-            ('4', 1, 0), ('5', 1, 1), ('6', 1, 2),
-            ('1', 2, 0), ('2', 2, 1), ('3', 2, 2),
-            ('0', 3, 0), ('00', 3, 1), ('⌫', 3, 2),
-            ('C', 4, 1)
-        ]
+        # 時間設定エリア
+        time_input_frame = tk.Frame(input_frame, bg="#f0f0f0")
+        time_input_frame.pack()
         
-        self.keypad_button_widgets = []  # ボタンウィジェットを保存するリスト
+        # 時間部分
+        self.create_time_unit(time_input_frame, "時間", self.hours, 0, 23, 0)
         
-        for (text, row, col) in keypad_buttons:
-            button = tk.Button(
-                keypad_inner_frame,
-                text=text,
-                font=self.keypad_font,
-                width=5,
-                height=2,
-                bg="#ffffff",
-                fg="#333333",
-                relief=tk.RAISED,
-                command=lambda t=text: self.keypad_press(t)
-            )
-            button.grid(row=row, column=col, padx=5, pady=5)
-            self.keypad_button_widgets.append(button)
+        # コロン1
+        tk.Label(time_input_frame, text=":", font=self.time_font, bg="#f0f0f0", fg="#333333").grid(row=1, column=1, padx=5)
+        
+        # 分部分
+        self.create_time_unit(time_input_frame, "分", self.minutes, 0, 59, 2)
+        
+        # コロン2
+        tk.Label(time_input_frame, text=":", font=self.time_font, bg="#f0f0f0", fg="#333333").grid(row=1, column=3, padx=5)
+        
+        # 秒部分
+        self.create_time_unit(time_input_frame, "秒", self.seconds, 0, 59, 4)
+        
+    def create_time_unit(self, parent, label_text, var, min_val, max_val, column):
+        """時間単位の入力エリアを作成"""
+        # ラベル
+        label = tk.Label(parent, text=label_text, font=self.button_font, bg="#f0f0f0", fg="#666666")
+        label.grid(row=0, column=column, padx=10)
+        
+        # 値表示とホイール入力エリア
+        value_frame = tk.Frame(parent, bg="#ffffff", relief=tk.RAISED, bd=2)
+        value_frame.grid(row=1, column=column, padx=10, pady=5)
+        
+        # 値表示ラベル
+        value_label = tk.Label(
+            value_frame,
+            textvariable=var,
+            font=self.time_font,
+            bg="#ffffff",
+            fg="#333333",
+            width=3,
+            height=1
+        )
+        value_label.pack(padx=10, pady=10)
+        
+        # マウスホイールイベントをバインド
+        value_frame.bind("<Button-4>", lambda e: self.wheel_up(var, max_val))  # Linux
+        value_frame.bind("<Button-5>", lambda e: self.wheel_down(var, min_val))  # Linux
+        value_frame.bind("<MouseWheel>", lambda e: self.mouse_wheel(e, var, min_val, max_val))  # Windows/Mac
+        
+        value_label.bind("<Button-4>", lambda e: self.wheel_up(var, max_val))
+        value_label.bind("<Button-5>", lambda e: self.wheel_down(var, min_val))
+        value_label.bind("<MouseWheel>", lambda e: self.mouse_wheel(e, var, min_val, max_val))
+        
+        # フォーカス設定（ホイールイベントを受け取るため）
+        value_frame.bind("<Button-1>", lambda e: value_frame.focus_set())
+        value_label.bind("<Button-1>", lambda e: value_frame.focus_set())
+        
+        # 増減ボタン（タッチデバイス向け）
+        button_frame = tk.Frame(value_frame, bg="#ffffff")
+        button_frame.pack()
+        
+        up_button = tk.Button(
+            button_frame,
+            text="▲",
+            font=font.Font(family="Arial", size=10),
+            bg="#e0e0e0",
+            fg="#333333",
+            width=2,
+            height=1,
+            command=lambda: self.wheel_up(var, max_val)
+        )
+        up_button.pack(side=tk.LEFT, padx=2)
+        
+        down_button = tk.Button(
+            button_frame,
+            text="▼",
+            font=font.Font(family="Arial", size=10),
+            bg="#e0e0e0",
+            fg="#333333",
+            width=2,
+            height=1,
+            command=lambda: self.wheel_down(var, min_val)
+        )
+        down_button.pack(side=tk.LEFT, padx=2)
+        
+    def mouse_wheel(self, event, var, min_val, max_val):
+        """マウスホイールイベント処理"""
+        if not self.timer_running:
+            if event.delta > 0:  # 上方向
+                self.wheel_up(var, max_val)
+            else:  # 下方向
+                self.wheel_down(var, min_val)
+                
+    def wheel_up(self, var, max_val):
+        """ホイール上方向（値増加）"""
+        if not self.timer_running:
+            current = var.get()
+            if current < max_val:
+                var.set(current + 1)
+            else:
+                var.set(0)  # 循環
+                
+    def wheel_down(self, var, min_val):
+        """ホイール下方向（値減少）"""
+        if not self.timer_running:
+            current = var.get()
+            if current > min_val:
+                var.set(current - 1)
+            else:
+                # 最大値に循環
+                if var == self.hours:
+                    var.set(23)
+                else:
+                    var.set(59)
+                    
+    def on_time_change(self, *args):
+        """時間設定が変更されたときの処理"""
+        if not self.timer_running:
+            # 秒数を計算
+            total_seconds = self.hours.get() * 3600 + self.minutes.get() * 60 + self.seconds.get()
+            self.seconds_left = total_seconds
+            
+            # 表示を更新
+            time_str = f"{self.hours.get():02d}:{self.minutes.get():02d}:{self.seconds.get():02d}"
+            self.time_display.config(text=time_str)
+            
+            # ステータス表示を更新
+            if total_seconds > 0:
+                time_text = self.format_time_message(total_seconds)
+                self.status_display.config(text=f"設定時間: {time_text}")
+            else:
+                self.status_display.config(text="マウスホイールで時間を調整してください")
             
     def create_control_buttons(self):
         control_frame = tk.Frame(self.main_frame, bg="#f0f0f0")
@@ -157,6 +270,19 @@ class TimerApp:
             command=self.reset_timer
         )
         self.reset_button.grid(row=0, column=2, padx=10)
+        
+        # 音響テストボタンを追加
+        self.sound_test_button = tk.Button(
+            button_container,
+            text="🔊 音テスト",
+            font=self.button_font,
+            bg="#9C27B0",
+            fg="white",
+            width=10,
+            height=2,
+            command=self.test_sound
+        )
+        self.sound_test_button.grid(row=1, column=1, padx=10, pady=10)
     
     def on_window_resize(self, event):
         # ウィンドウサイズが変わったときにフォントサイズを調整
@@ -164,91 +290,48 @@ class TimerApp:
         window_height = self.root.winfo_height()
         
         # 最小サイズを確保
-        if window_width < 300 or window_height < 450:
+        if window_width < 400 or window_height < 300:
             return
             
         # ディスプレイフォントのサイズを調整
-        display_size = int(min(window_width / 10, window_height / 15))
+        display_size = int(min(window_width / 10, window_height / 10))
         display_size = max(24, min(display_size, 60))  # 最小24、最大60
         self.display_font.configure(size=display_size)
         
         # ボタンフォントのサイズを調整
-        button_size = int(min(window_width / 40, window_height / 50))
+        button_size = int(min(window_width / 40, window_height / 30))
         button_size = max(10, min(button_size, 16))  # 最小10、最大16
         self.button_font.configure(size=button_size)
         
-        # キーパッドフォントのサイズを調整
-        keypad_size = int(min(window_width / 25, window_height / 30))
-        keypad_size = max(14, min(keypad_size, 22))  # 最小14、最大22
-        self.keypad_font.configure(size=keypad_size)
+        # 時間フォントのサイズを調整
+        time_size = int(min(window_width / 20, window_height / 15))
+        time_size = max(20, min(time_size, 40))  # 最小20、最大40
+        self.time_font.configure(size=time_size)
         
     def keyboard_input(self, event):
         # タイマーが実行中でなければキーボード入力を処理
         if not self.timer_running:
-            key = event.char
-            if key in "0123456789":
-                # 数字キーの処理
-                self.keypad_press(key)
-            elif event.keysym == "BackSpace":
-                # バックスペースキーの処理
-                self.keypad_press("⌫")
-            elif event.keysym == "Delete" or event.keysym == "Escape":
-                # Delete/Escキーでクリア
-                self.keypad_press("C")
-            elif event.keysym == "Return":
+            if event.keysym == "Return":
                 # Enterキーでタイマー開始
                 self.start_timer()
             elif event.keysym == "space":
                 # スペースキーで一時停止/再開
                 if self.timer_running:
                     self.pause_timer()
+            elif event.keysym == "r":
+                # rキーでリセット
+                self.reset_timer()
+            # 数字キーで直接時間設定
+            elif event.char in "0123456789":
+                # フォーカスされている時間単位に応じて値を設定
+                pass  # 必要に応じて実装
         elif event.keysym == "Escape":
             # タイマー実行中でもEscapeキーでリセット
             self.reset_timer()
+        elif event.keysym == "space":
+            # スペースキーで一時停止/再開
+            self.pause_timer()
             
-    def keypad_press(self, key):
-        if not self.timer_running:
-            if key == "C":
-                # クリア
-                self.input_value = ""
-                self.update_display()
-            elif key == "⌫":
-                # バックスペース
-                self.input_value = self.input_value[:-1]
-                self.update_display()
-            elif key == "00":
-                # 00キーの処理
-                if len(self.input_value) <= 4:  # 最大6桁まで（hhmmss）
-                    self.input_value += "00"
-                    self.update_display()
-            elif len(self.input_value) < 6:  # 最大6桁まで（hhmmss）
-                # 数字が押された
-                self.input_value += key
-                self.update_display()
-    
-    def update_display(self):
-        if self.input_value == "":
-            # 入力がない場合
-            self.time_display.config(text="00:00:00")
-            self.input_display.config(text="時間を入力してください")
-            return
-            
-        # 入力値から時間フォーマットに変換
-        padded = self.input_value.zfill(6)
-        hours = padded[0:2]
-        minutes = padded[2:4]
-        seconds = padded[4:6]
-        
-        self.time_display.config(text=f"{hours}:{minutes}:{seconds}")
-        
-        # 入力時間を秒数に変換
-        total_seconds = int(hours) * 3600 + int(minutes) * 60 + int(seconds)
-        self.seconds_left = total_seconds
-        
-        # 入力状態メッセージ
-        time_text = self.format_time_message(total_seconds)
-        self.input_display.config(text=f"入力: {time_text}")
-    
     def format_time_message(self, total_seconds):
         hours = total_seconds // 3600
         minutes = (total_seconds % 3600) // 60
@@ -268,24 +351,29 @@ class TimerApp:
         if self.timer_paused:
             # 一時停止から再開
             self.timer_paused = False
-            self.input_display.config(text="タイマー実行中...")
+            self.status_display.config(text="タイマー実行中...")
             self.pause_button.config(text="一時停止")
+            print("タイマー再開")
         elif not self.timer_running and self.seconds_left > 0:
             # 新しいタイマー開始
             self.timer_running = True
-            self.input_display.config(text="タイマー実行中...")
+            self.status_display.config(text="タイマー実行中...")
             self.start_button.config(state=tk.DISABLED)
             self.pause_button.config(state=tk.NORMAL)
+            
+            print(f"タイマー開始: {self.seconds_left}秒")
             
             # タイマー処理をスレッドで実行
             self.timer_thread = threading.Thread(target=self.run_timer)
             self.timer_thread.daemon = True
             self.timer_thread.start()
+        else:
+            print(f"タイマー開始できません - 実行中: {self.timer_running}, 時間: {self.seconds_left}")
     
     def pause_timer(self):
         if self.timer_running and not self.timer_paused:
             self.timer_paused = True
-            self.input_display.config(text="タイマー一時停止中")
+            self.status_display.config(text="タイマー一時停止中")
             self.pause_button.config(text="再開")
         else:
             self.start_timer()  # 再開処理
@@ -297,27 +385,39 @@ class TimerApp:
         self.timer_running = False
         self.timer_paused = False
         self.seconds_left = 0
-        self.input_value = ""
+        
+        # 時間設定をリセット
+        self.hours.set(0)
+        self.minutes.set(0)
+        self.seconds.set(0)
+        
         self.time_display.config(text="00:00:00")
-        self.input_display.config(text="時間を入力してください")
+        self.status_display.config(text="マウスホイールで時間を調整してください")
         self.start_button.config(state=tk.NORMAL)
-        self.pause_button.config(state=tk.DISABLED)
-        # 音を鳴らす処理は削除（タイマー完了時のみ鳴るように）
+        self.pause_button.config(state=tk.DISABLED, text="一時停止")
     
     def run_timer(self):
+        print("タイマースレッド開始")
         while self.timer_running and self.seconds_left > 0:
             if not self.timer_paused:
                 # 1秒待機
                 time.sleep(1)
-                self.seconds_left -= 1
-                
-                # UIの更新はメインスレッドで行う
-                self.root.after(0, self.update_timer_display)
-                
-                # タイマー終了
-                if self.seconds_left <= 0:
-                    self.root.after(0, self.timer_complete)
-                    break
+                if self.timer_running:  # 途中でリセットされていないかチェック
+                    self.seconds_left -= 1
+                    print(f"残り時間: {self.seconds_left}秒")
+                    
+                    # UIの更新はメインスレッドで行う
+                    self.root.after(0, self.update_timer_display)
+                    
+                    # タイマー終了チェック
+                    if self.seconds_left <= 0:
+                        print("タイマー完了！timer_complete呼び出し")
+                        self.root.after(0, self.timer_complete)
+                        return  # ループを抜ける
+            else:
+                # 一時停止中は短い間隔で状態をチェック
+                time.sleep(0.1)
+        print("タイマースレッド終了")
     
     def update_timer_display(self):
         hours = self.seconds_left // 3600
@@ -328,26 +428,100 @@ class TimerApp:
         self.time_display.config(text=time_str)
     
     def timer_complete(self):
-        self.time_display.config(text="00:00:00")
-        self.input_display.config(text="タイマー終了！")
+        print("timer_complete呼び出し開始")
+        
+        # タイマー完了処理
         self.timer_running = False
+        self.timer_paused = False
+        self.seconds_left = 0
+        
+        # UI表示を更新
+        self.time_display.config(text="00:00:00", fg="#FF0000")  # 赤色で強調
+        self.status_display.config(text="🎉 タイマー終了！ 🎉", fg="#FF0000")
+        
+        # ボタン状態をリセット
         self.start_button.config(state=tk.NORMAL)
-        self.pause_button.config(state=tk.DISABLED)
+        self.pause_button.config(state=tk.DISABLED, text="一時停止")
         
-        # 通知音を鳴らす（タイマー完了時のみ）
-        winsound.Beep(440, 1000)  # 440Hzで1秒間
+        # 複数の音響手法を試す
+        self.play_completion_sound()
         
-        # # Windows通知を表示
-        # self.toaster.show_toast(
-        #     "タイマー終了",
-        #     "設定したタイマーが完了しました。",
-        #     icon_path=None,
-        #     duration=5,
-        #     threaded=True
-        # )
+        print("メッセージボックス表示開始")
+        # ポップアップメッセージボックスを表示
+        try:
+            import tkinter.messagebox as msgbox
+            self.root.after(100, lambda: msgbox.showinfo(
+                "タイマー完了", 
+                "設定したタイマーが完了しました！\n\nお疲れ様でした。",
+                parent=self.root
+            ))
+            print("メッセージボックス予約完了")
+        except Exception as e:
+            print(f"メッセージボックスエラー: {e}")
+        
+        # 3秒後に表示色を元に戻す
+        self.root.after(3000, lambda: (
+            self.time_display.config(fg="#333333"),
+            self.status_display.config(text="マウスホイールで時間を調整してください", fg="#666666")
+        ))
+        
+        print("timer_complete処理完了")
+        
+    def play_completion_sound(self):
+        """確実に聞こえる方法で音を鳴らす"""
+        print("=== タイマー完了音再生開始 ===")
+        
+        # 方法3が聞こえることが確認されたので、これをメインにする
+        try:
+            print("方法3: winsound.PlaySound で音再生")
+            # 3回異なるシステム音を鳴らす
+            winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS)
+            time.sleep(0.5)
+            winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS)
+            time.sleep(0.5)
+            winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS)
+            print("方法3: 音再生完了 ✅")
+            
+        except Exception as e:
+            print(f"方法3エラー: {e}")
+            
+            # バックアップとして他の方法も試す
+            try:
+                print("バックアップ: winsound.MessageBeep")
+                winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                time.sleep(0.3)
+                winsound.MessageBeep(winsound.MB_ICONASTERISK)
+                time.sleep(0.3)
+                winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                print("バックアップ音再生完了 ✅")
+            except Exception as e2:
+                print(f"バックアップもエラー: {e2}")
+                # 最終手段として視覚的通知
+                print("🔔🔔🔔 タイマー完了！ 🔔🔔🔔")
+        
+        print("=== タイマー完了音再生終了 ===")
+        
+    def test_sound(self):
+        """音響テスト用メソッド - 方法3を中心にテスト"""
+        print("\n🔊 手動音響テスト開始 🔊")
+        
+        # 確認された方法3でテスト
+        try:
+            print("✨ 効果的な音再生方法でテスト中...")
+            winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS)
+            time.sleep(0.4)
+            winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS)
+            time.sleep(0.4)
+            winsound.PlaySound("SystemQuestion", winsound.SND_ALIAS)
+            print("✅ 音テスト完了！音が聞こえましたか？")
+        except Exception as e:
+            print(f"❌ 音テストエラー: {e}")
+            print("💡 システム音設定を確認してください")
+        
+        print("🔊 手動音響テスト完了 🔊\n")
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.minsize(300, 450)  # 最小サイズを設定
+    root.minsize(400, 300)  # 最小サイズを設定
     app = TimerApp(root)
     root.mainloop()
