@@ -1,0 +1,388 @@
+/* タイマーアプリ - Web版 CSS */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    background: #f0f0f0;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    max-width: 600px;
+    width: 100%;
+    min-height: 600px;
+}
+
+/* ヘッダー */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    color: #333;
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 16px;
+}
+
+/* タイマー表示部分 */
+.timer-display {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.time-display {
+    font-size: 48px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+    font-family: 'Courier New', monospace;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.time-display.completed {
+    color: #FF0000;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.status-display {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.status-display.completed {
+    color: #FF0000;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* 時間設定部分 */
+.time-input {
+    margin-bottom: 25px;
+}
+
+.time-input h2 {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.time-input-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.time-unit {
+    text-align: center;
+}
+
+.time-unit label {
+    display: block;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.time-value {
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    min-width: 80px;
+    user-select: none;
+}
+
+.time-value:hover {
+    border-color: #4CAF50;
+    box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
+}
+
+.time-value .value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    display: block;
+    margin-bottom: 10px;
+    font-family: 'Courier New', monospace;
+}
+
+.controls {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+}
+
+.up-btn, .down-btn {
+    background: #e0e0e0;
+    border: none;
+    border-radius: 5px;
+    width: 25px;
+    height: 20px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.up-btn:hover, .down-btn:hover {
+    background: #d0d0d0;
+}
+
+.colon {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin: 0 5px;
+}
+
+/* クイック設定 */
+.quick-settings {
+    margin-bottom: 25px;
+}
+
+.quick-settings h2 {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.quick-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.quick-buttons button {
+    background: #e0e0e0;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-buttons button:hover {
+    background: #d0d0d0;
+    border-color: #bbb;
+    transform: translateY(-1px);
+}
+
+.quick-buttons button:active {
+    transform: translateY(0);
+}
+
+/* コントロールボタン */
+.control-buttons {
+    text-align: center;
+}
+
+.control-buttons h2 {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.control-btn {
+    font-size: 16px;
+    font-weight: bold;
+    border: 3px solid transparent;
+    border-radius: 10px;
+    padding: 15px 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.start-btn {
+    background: #4CAF50;
+    color: white;
+    border-color: #45a049;
+}
+
+.start-btn:hover:not(:disabled) {
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+.pause-btn {
+    background: #2196F3;
+    color: white;
+    border-color: #1976D2;
+}
+
+.pause-btn:hover:not(:disabled) {
+    background: #1976D2;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+}
+
+.reset-btn {
+    background: #F44336;
+    color: white;
+    border-color: #d32f2f;
+}
+
+.reset-btn:hover {
+    background: #d32f2f;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
+}
+
+.sound-test-container {
+    margin-top: 10px;
+}
+
+.sound-test-btn {
+    background: #9C27B0;
+    color: white;
+    border-color: #7B1FA2;
+    min-width: 140px;
+}
+
+.sound-test-btn:hover {
+    background: #7B1FA2;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(156, 39, 176, 0.3);
+}
+
+.control-btn:disabled {
+    background: #ccc;
+    color: #999;
+    cursor: not-allowed;
+    border-color: #bbb;
+}
+
+.control-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.control-hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 15px;
+}
+
+/* デバッグセクション */
+.debug-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+.debug-section h3 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+#debugLog {
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #666;
+    background: #f8f8f8;
+    padding: 10px;
+    border-radius: 5px;
+    white-space: pre-wrap;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 600px) {
+    .container {
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    .time-display {
+        font-size: 36px;
+    }
+    
+    .time-value .value {
+        font-size: 24px;
+    }
+    
+    .button-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .control-btn {
+        width: 200px;
+    }
+    
+    .quick-buttons {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 400px) {
+    .time-display {
+        font-size: 28px;
+    }
+    
+    .time-input-container {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .colon {
+        display: none;
+    }
+}
