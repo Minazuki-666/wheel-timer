@@ -446,19 +446,6 @@ class TimerApp:
         # 複数の音響手法を試す
         self.play_completion_sound()
         
-        print("メッセージボックス表示開始")
-        # ポップアップメッセージボックスを表示
-        try:
-            import tkinter.messagebox as msgbox
-            self.root.after(100, lambda: msgbox.showinfo(
-                "タイマー完了", 
-                "設定したタイマーが完了しました！\n\nお疲れ様でした。",
-                parent=self.root
-            ))
-            print("メッセージボックス予約完了")
-        except Exception as e:
-            print(f"メッセージボックスエラー: {e}")
-        
         # 3秒後に表示色を元に戻す
         self.root.after(3000, lambda: (
             self.time_display.config(fg="#333333"),
