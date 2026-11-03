@@ -4,6 +4,8 @@ HTML、CSS、JavaScriptで作成されたマウスホイール対応タイマー
 
 このプロジェクトはcloudflare pages にて公開されています
 
+[wheel-timer.junmen-abe.workers.dev](wheel-timer.junmen-abe.workers.dev)
+
 ## 🌟 特徴
 
 - **🖱️ マウスホイール対応**: 時間、分、秒をマウスホイールで直感的に調整
